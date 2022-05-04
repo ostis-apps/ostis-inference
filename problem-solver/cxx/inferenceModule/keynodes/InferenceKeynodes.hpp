@@ -42,6 +42,9 @@ public:
   SC_PROPERTY(Keynode("concept_template_with_links"), ForceCreate)
   static ScAddr concept_template_with_links;
 
+  SC_PROPERTY(Keynode("concept_template_for_generation"), ForceCreate)
+  static ScAddr concept_template_for_generation;
+
   SC_PROPERTY(Keynode("nrel_basic_sequence"), ForceCreate)
   static ScAddr nrel_basic_sequence;
 
@@ -56,6 +59,12 @@ public:
 
   SC_PROPERTY(Keynode("nrel_negation"), ForceCreate)
   static ScAddr nrel_negation;
+
+SC_PROPERTY(Keynode("nrel_implication"), ForceCreate)
+static ScAddr nrel_implication;
+
+SC_PROPERTY(Keynode("nrel_equivalence"), ForceCreate)
+static ScAddr nrel_equivalence;
 };
 
 }
