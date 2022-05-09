@@ -60,11 +60,14 @@ public:
   SC_PROPERTY(Keynode("nrel_negation"), ForceCreate)
   static ScAddr nrel_negation;
 
-SC_PROPERTY(Keynode("nrel_implication"), ForceCreate)
-static ScAddr nrel_implication;
+  SC_PROPERTY(Keynode("nrel_implication"), ForceCreate)
+  static ScAddr nrel_implication;
 
-SC_PROPERTY(Keynode("nrel_equivalence"), ForceCreate)
-static ScAddr nrel_equivalence;
+  SC_PROPERTY(Keynode("nrel_equivalence"), ForceCreate)
+  static ScAddr nrel_equivalence;
+
+  SC_PROPERTY(Keynode("rrel_main_key_sc_element"), ForceCreate)
+  static ScAddr rrel_main_key_sc_element;
 };
 
 }
