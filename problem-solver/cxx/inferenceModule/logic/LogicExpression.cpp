@@ -48,6 +48,7 @@ LogicFormulaResult AndExpressionNode::compute() const
 {
   LogicFormulaResult result;
   result.value = false;
+  LogicFormulaResult fail = {false, {}};
   vector<TemplateExpressionNode *> formulasWithoutConstants;
   vector<TemplateExpressionNode *> formulasToGenerate;
   FormulaClassifier formulaClassifier(context);
@@ -71,43 +72,34 @@ LogicFormulaResult AndExpressionNode::compute() const
     }
     LogicFormulaResult lastResult = operand->compute();
     SC_LOG_DEBUG("One of operands in conjunction returned " + to_string(lastResult.value))
-    if (!lastResult.value /*|| lastResult.replacements.empty()*/)
-      return {false, {}};
+    if (!lastResult.value)
+      return fail;
     if (!result.value) // this is true only when processing the first operand
       result = lastResult;
     else
     {
       result.replacements = ReplacementsUtils::intersectionOfReplacements(result.replacements, lastResult.replacements);
       if (result.replacements.empty())
-      {
-        result.value = false;
-        return result;
-      }
+        return fail;
     }
   }
   for (auto const & atom : formulasWithoutConstants) // atoms without constants are processed here
   {
     LogicFormulaResult lastResult = atom->find(result.replacements);
-    if (!lastResult.value || lastResult.replacements.empty())
-      return {false, {}};
+    if (!lastResult.value)
+      return fail;
     result.replacements = ReplacementsUtils::intersectionOfReplacements(result.replacements, lastResult.replacements);
     if (result.replacements.empty())
-    {
-      result.value = false;
-      return result;
-    }
+      return fail;
   }
   for (auto const & genAtom : formulasToGenerate) // atoms which should be generated are processed here
   {
     LogicFormulaResult lastResult = genAtom->generate(result.replacements);
-    if (!lastResult.value || lastResult.replacements.empty())
-      return {false, {}};
+    if (!lastResult.value)
+      return fail;
     result.replacements = ReplacementsUtils::intersectionOfReplacements(result.replacements, lastResult.replacements);
     if (result.replacements.empty())
-    {
-      result.value = false;
-      return result;
-    }
+      return fail;
   }
   return result;
 }
@@ -175,10 +167,7 @@ LogicFormulaResult OrExpressionNode::compute() const
     LogicFormulaResult lastResult = operand->compute();
     SC_LOG_DEBUG("One of operands in disjunction returned " + to_string(lastResult.value))
     result.value |= lastResult.value;
-    if (result.replacements.empty()) // if replacements of conjunction are empty then assign results of subformula to result of conjunction
-      result.replacements = lastResult.replacements;
-    else if (!lastResult.replacements.empty()) // if both replacements of conjunction and subformula are not empty then make union
-      result.replacements = ReplacementsUtils::unionOfReplacements(result.replacements, lastResult.replacements);
+    result.replacements = ReplacementsUtils::unionOfReplacements(result.replacements, lastResult.replacements);
   }
   if (result.replacements.empty())
     return {false, {}};
@@ -186,19 +175,13 @@ LogicFormulaResult OrExpressionNode::compute() const
   {
     LogicFormulaResult lastResult = atom->find(result.replacements);
     result.value |= lastResult.value;
-    if (result.replacements.empty()) // if replacements of conjunction are empty then assign results of subformula to result of conjunction
-      result.replacements = lastResult.replacements;
-    else if (!lastResult.replacements.empty()) // if both replacements of conjunction and subformula are not empty then make union
-      result.replacements = ReplacementsUtils::unionOfReplacements(result.replacements, lastResult.replacements);
+    result.replacements = ReplacementsUtils::unionOfReplacements(result.replacements, lastResult.replacements);
   }
   for (auto const & genAtom : formulasToGenerate)
   {
     LogicFormulaResult lastResult = genAtom->generate(result.replacements);
     result.value |= lastResult.value;
-    if (result.replacements.empty()) // if replacements of conjunction are empty then assign results of subformula to result of conjunction
-      result.replacements = lastResult.replacements;
-    else if (!lastResult.replacements.empty()) // if both replacements of conjunction and subformula are not empty then make union
-      result.replacements = ReplacementsUtils::unionOfReplacements(result.replacements, lastResult.replacements);
+    result.replacements = ReplacementsUtils::unionOfReplacements(result.replacements, lastResult.replacements);
   }
   return result;
 }
@@ -283,18 +266,15 @@ LogicFormulaResult ImplicationExpressionNode::compute() const
     leftResult = operands[0]->compute();
     SC_LOG_DEBUG("--- value from left is " + to_string(leftResult.value))
     SC_LOG_DEBUG("--- Replacements from left are " + to_string(ReplacementsUtils::getRowsAmount(leftResult.replacements)) + " x " + to_string(ReplacementsUtils::getColumnsAmount(leftResult.replacements)))
+
     if (!isRightGenerated)
-    {
       SC_LOG_DEBUG("*** Right part shouldn't be generated")
-      rightResult = operands[1]->compute();
-      SC_LOG_DEBUG("--- value from right is " + to_string(rightResult.value))
-      SC_LOG_DEBUG("--- Replacements from right are " + to_string(ReplacementsUtils::getRowsAmount(rightResult.replacements)) + " x " + to_string(ReplacementsUtils::getColumnsAmount(rightResult.replacements)))
-    }
     else
-    {
       SC_LOG_DEBUG("*** Right part should be generated")
-      rightResult = rightAtom->generate(leftResult.replacements);
-    }
+
+    rightResult = (isRightGenerated ? rightAtom->generate(leftResult.replacements) : operands[1]->compute());
+    SC_LOG_DEBUG("--- value from right is " + to_string(rightResult.value))
+    SC_LOG_DEBUG("--- Replacements from right are " + to_string(ReplacementsUtils::getRowsAmount(rightResult.replacements)) + " x " + to_string(ReplacementsUtils::getColumnsAmount(rightResult.replacements)))
   }
   else
   {
@@ -341,14 +321,71 @@ LogicFormulaResult EquivalenceExpressionNode::compute() const
 {
 
   LogicFormulaResult result;
+  vector<LogicFormulaResult> subFormulaResults;
   result.value = false;
   FormulaClassifier formulaClassifier(context);
+
+  vector<TemplateExpressionNode *> formulasWithoutConstants;
+  vector<TemplateExpressionNode *> formulasToGenerate;
+  for (auto const & operand : operands)
+  {
+    auto atom = dynamic_cast<TemplateExpressionNode *>(operand.get());
+    if (atom)
+    {
+      if (!formulaClassifier.isFormulaWithConst(atom->getFormulaTemplate()))
+      {
+        SC_LOG_DEBUG("Found formula without constants in equivalence")
+        formulasWithoutConstants.push_back(atom);
+        continue;
+      }
+      if (formulaClassifier.isFormulaToGenerate(atom->getFormulaTemplate()))
+      {
+        SC_LOG_DEBUG("Found formula to generate in equivalence")
+        formulasToGenerate.push_back(atom);
+        continue;
+      }
+    }
+    subFormulaResults.push_back(operand->compute());
+  }
+  SC_LOG_DEBUG("Processed " + to_string(subFormulaResults.size()) + " formulas in equivalence")
+  if (subFormulaResults.empty())
+  {
+    SC_LOG_ERROR("All sub formulas in equivalence are either don't have constants or supposed to be generated")
+    throw std::exception();
+  }
+
+  if (!formulasWithoutConstants.empty())
+  {
+    SC_LOG_DEBUG("Processing formula without constants")
+    auto formulaWithoutConstants = formulasWithoutConstants[0];
+    subFormulaResults.push_back(formulaWithoutConstants->find(subFormulaResults[0].replacements));
+  }
+
+  if (!formulasToGenerate.empty())
+  {
+    SC_LOG_DEBUG("Processing formula to generate")
+    auto formulaToGenerate = formulasToGenerate[0];
+    subFormulaResults.push_back(formulaToGenerate->generate(subFormulaResults[0].replacements));
+  }
+  result.value = subFormulaResults[0].value == subFormulaResults[1].value;
+  if (result.value)
+    result.replacements = ReplacementsUtils::intersectionOfReplacements(subFormulaResults[0].replacements, subFormulaResults[1].replacements);
+  return result;
+
+
+
 
   auto leftAtom = dynamic_cast<TemplateExpressionNode *>(operands[0].get());
   bool isLeftGenerated = (leftAtom) && formulaClassifier.isFormulaToGenerate(leftAtom->getFormulaTemplate());
 
   auto rightAtom = dynamic_cast<TemplateExpressionNode *>(operands[1].get());
   bool isRightGenerated = (rightAtom) && formulaClassifier.isFormulaToGenerate(rightAtom->getFormulaTemplate());
+
+  bool leftHasConstants = (leftAtom) && formulaClassifier.isFormulaWithConst(leftAtom->getFormulaTemplate());
+  bool rightHasConstants = (rightAtom) && formulaClassifier.isFormulaWithConst(rightAtom->getFormulaTemplate());
+
+  SC_LOG_DEBUG("Left has constants = " + to_string(leftHasConstants))
+  SC_LOG_DEBUG("Right has constants = " + to_string(rightHasConstants))
 
   LogicFormulaResult leftResult;
   LogicFormulaResult rightResult;
@@ -360,29 +397,24 @@ LogicFormulaResult EquivalenceExpressionNode::compute() const
     SC_LOG_DEBUG("--- value from left is " + to_string(leftResult.value))
     SC_LOG_DEBUG("--- Replacements from left are " + to_string(ReplacementsUtils::getRowsAmount(leftResult.replacements)) + " x " + to_string(ReplacementsUtils::getColumnsAmount(leftResult.replacements)))
     if (!isRightGenerated)
-    {
       SC_LOG_DEBUG("*** Right part of equivalence shouldn't be generated")
-      rightResult = operands[1]->compute();
-      SC_LOG_DEBUG("--- value from right is " + to_string(rightResult.value))
-      SC_LOG_DEBUG("--- Replacements from right are " + to_string(ReplacementsUtils::getRowsAmount(rightResult.replacements)) + " x " + to_string(ReplacementsUtils::getColumnsAmount(rightResult.replacements)))
-    }
     else
-    {
       SC_LOG_DEBUG("*** Right part of equivalence should be generated")
-      rightResult = rightAtom->generate(leftResult.replacements);
-    }
+    rightResult = (isRightGenerated ? rightAtom->generate(leftResult.replacements) : operands[1]->compute());
+    SC_LOG_DEBUG("--- value from right is " + to_string(rightResult.value))
+    SC_LOG_DEBUG("--- Replacements from right are " + to_string(ReplacementsUtils::getRowsAmount(rightResult.replacements)) + " x " + to_string(ReplacementsUtils::getColumnsAmount(rightResult.replacements)))
   }
   else
   {
-    SC_LOG_DEBUG("*** Left part should be generated")
+    SC_LOG_DEBUG("*** Left part of equivalence should be generated")
     if (isRightGenerated)
     {
-      SC_LOG_DEBUG("*** Right part should be generated")
+      SC_LOG_DEBUG("*** Right part of equivalence should be generated")
       return {true, {}};
     }
     else
     {
-      SC_LOG_DEBUG("*** Right part shouldn't be generated")
+      SC_LOG_DEBUG("*** Right part of equivalence shouldn't be generated")
       rightResult = operands[1]->compute();
       leftResult = leftAtom->generate(rightResult.replacements);
     }
@@ -451,13 +483,13 @@ LogicFormulaResult TemplateExpressionNode::compute() const
 {
   LogicFormulaResult result;
   auto const & idtf = context->HelperGetSystemIdtf(formulaTemplate);
-  auto scTemplateParamsVector = templateManager->createTemplateParamsList(formulaTemplate, templateSearcher->getParams());
-  SC_LOG_DEBUG("before search in " + idtf)
+  SC_LOG_DEBUG("Checking atom " + idtf)
+
+//  auto scTemplateParamsVector = templateManager->createTemplateParamsList(formulaTemplate, templateSearcher->getParams());
   result.replacements = templateSearcher->searchTemplate(formulaTemplate);
-  SC_LOG_DEBUG("after  search in " + idtf)
   result.value = !result.replacements.empty();
   std::string ending = (result.value ? " right" : " wrong");
-  SC_LOG_DEBUG("New Statement " + idtf + ending)
+  SC_LOG_DEBUG("Compute Statement " + idtf + ending)
 
   return result;
 }
@@ -468,6 +500,10 @@ LogicFormulaResult TemplateExpressionNode::find(map<string, vector<ScAddr>> & re
   auto paramsVector = ReplacementsUtils::replacementsToScTemplateParams(replacements);
   result.replacements = templateSearcher->searchTemplate(formulaTemplate, paramsVector);
   result.value = !result.replacements.empty();
+
+  auto const & idtf = context->HelperGetSystemIdtf(formulaTemplate);
+  std::string ending = (result.value ? " right" : " wrong");
+  SC_LOG_DEBUG("Find Statement " + idtf + ending)
   return result;
 }
 
@@ -491,10 +527,15 @@ LogicFormulaResult TemplateExpressionNode::generate(map<string, vector<ScAddr>> 
       const ScTemplate::Result & genTemplate = context->HelperGenTemplate(generatedTemplate, generationResult);
       SC_LOG_DEBUG("context->HelperGenTemplate() = " + genTemplate.Msg())
       SC_LOG_DEBUG("generationResult.Size() = " + to_string(generationResult.Size()))
+
+      bool outputIsValid = outputStructure.IsValid();
       for (auto i = 0; i < generationResult.Size(); ++i)
       {
         templateSearcher->addParamIfNotPresent(generationResult[i]);
+        if (outputIsValid)
+          context->CreateEdge(ScType::EdgeAccessConstPosPerm, outputStructure, generationResult[i]);
       }
+
     }
   }
   return compute();

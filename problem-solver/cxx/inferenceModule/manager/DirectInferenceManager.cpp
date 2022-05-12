@@ -165,19 +165,23 @@ ScAddr DirectInferenceManager::applyInference(
     vector<ScAddr> checkedRuleList;
     queue<ScAddr> uncheckedRules;
 
+
+
     ScAddr rule;
     bool isUsed;
+    SC_LOG_DEBUG("Start rule applying. There is " + to_string(rulesQueuesByPriority.size()) + " rule(s)")
     for (size_t ruleQueueIndex = 0; ruleQueueIndex < rulesQueuesByPriority.size() && !targetAchieved; ruleQueueIndex++)
     {
       uncheckedRules = rulesQueuesByPriority[ruleQueueIndex];
       while (!uncheckedRules.empty())
       {
         rule = uncheckedRules.front();
-        auto sizeBefore = templateSearcher->getParams().size();
+        clearSatisfiabilityInformation(rule);
+        SC_LOG_DEBUG("Using rule " + ms_context->HelperGetSystemIdtf(rule))
         isUsed = useRule(rule, argumentList);
-        auto sizeAfter = templateSearcher->getParams().size();
-        if (sizeBefore != sizeAfter || isUsed)
+        if (isUsed)
         {
+          addSatisfiabilityInformation(rule, true);
           targetAchieved = isTargetAchieved(targetStatement, argumentList);
           if (targetAchieved)
           {
@@ -192,7 +196,10 @@ ScAddr DirectInferenceManager::applyInference(
           }
         }
         else
+        {
+          addSatisfiabilityInformation(rule, false);
           checkedRuleList.push_back(rule);
+        }
 
         uncheckedRules.pop();
       }
@@ -218,11 +225,7 @@ bool DirectInferenceManager::useRule(ScAddr const & rule, vector<ScAddr> /*const
   ScAddr keyScElement = IteratorUtils::getAnyByOutRelation(ms_context, rule, InferenceKeynodes::rrel_main_key_sc_element);
   if (!keyScElement.IsValid())
     return false;
-  ScAddr ifStatement = LogicRuleUtils::getIfStatement(ms_context, rule);
 
-  //collect all the templates within if condition
-  //generate for them sets of ScTemplateParams
-  //choose the set when IsEmpty() is false, memorize the template the set was generated for
   LogicExpression logicExpression(
         ms_context,
         templateSearcher,
@@ -230,54 +233,12 @@ bool DirectInferenceManager::useRule(ScAddr const & rule, vector<ScAddr> /*const
         argumentList,
         outputStructure
   );
-//  auto root = logicExpression.build(ifStatement);
-  ////////  above was later, in future it'll be statement below    /////////////////////////////////////
+
   auto root = logicExpression.build(keyScElement);
   auto result = root->compute();
   SC_LOG_DEBUG(std::string("Whole statement is ") + (result.value ? "right" : "wrong"))
   isUsed = result.value;
 
-  /*
-  SC_LOG_DEBUG("Created " + to_string(logicExpression.GetParamsSet().size()) + " statement params variants")
-
-  for (const auto & ifStatementParams : logicExpression.GetParamsSet())
-  {
-    auto checkResult = (*root).check(ifStatementParams);
-    ScTemplateSearchResultItem resultItem = checkResult.templateSearchResult;
-    SC_LOG_DEBUG(std::string("Whole statement is ") + (checkResult.value ? "right" : "wrong"))
-
-    if (checkResult.value)
-    {
-      ScAddr elseStatement = LogicRuleUtils::getElseStatement(ms_context, rule);
-
-      ScTemplateParams elseStatementParams;
-      if (resultItem.Size() > 0)
-      {
-        vector<ScAddr> varList = IteratorUtils::getAllWithType(ms_context, elseStatement, ScType::NodeVar);
-        for (auto const & var : varList)
-        {
-          if (ms_context->HelperCheckEdge(checkResult.formulaTemplate, var, ScType::EdgeAccessConstPosPerm))
-          {
-            std::string varName = ms_context->HelperGetSystemIdtf(var);
-            ScAddr node;
-            ifStatementParams.Get(varName, node);
-            if (!node.IsValid())
-            {
-              node = resultItem[varName];
-            }
-            elseStatementParams.Add(varName, node);
-          }
-        }
-      }
-      if (generateStatement(elseStatement, elseStatementParams))
-      {
-        this->solutionTreeManager->addNode(rule, ifStatementParams);
-        isUsed = true;
-        SC_LOG_DEBUG("Rule used")
-      }
-    }
-  }
-  */
   return isUsed;
 }
 
@@ -322,4 +283,22 @@ bool DirectInferenceManager::isTargetAchieved(ScAddr const & targetStatement, ve
       return true;
   }
   return false;
+}
+
+
+void DirectInferenceManager::clearSatisfiabilityInformation(ScAddr const & rule)
+{
+  ScIterator3Ptr iterator3Ptr = ms_context->Iterator3(
+        InferenceKeynodes::concept_satisfiable_formula,
+        ScType::EdgeAccess,
+        rule);
+  while (iterator3Ptr->Next())
+    ms_context->EraseElement(iterator3Ptr->Get(1));
+}
+
+void DirectInferenceManager::addSatisfiabilityInformation(ScAddr const & rule, bool isSatisfiable)
+{
+  clearSatisfiabilityInformation(rule);
+  ScType arcType = (isSatisfiable ? ScType::EdgeAccessConstPosTemp : ScType::EdgeAccessConstNegTemp);
+  ms_context->CreateEdge(arcType, InferenceKeynodes::concept_satisfiable_formula, rule);
 }
