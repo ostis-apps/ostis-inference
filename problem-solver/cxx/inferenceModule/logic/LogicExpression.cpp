@@ -59,26 +59,23 @@ LogicFormulaResult AndExpressionNode::compute() const
     {
       if (!formulaClassifier.isFormulaWithConst(atom->getFormulaTemplate()))
       {
-        SC_LOG_DEBUG("Found formula without constants in conjunction")
         formulasWithoutConstants.push_back(atom);
         continue;
       }
       if (formulaClassifier.isFormulaToGenerate(atom->getFormulaTemplate()))
       {
-        SC_LOG_DEBUG("Found formula to generate in conjunction")
         formulasToGenerate.push_back(atom);
         continue;
       }
     }
     LogicFormulaResult lastResult = operand->compute();
-    SC_LOG_DEBUG("One of operands in conjunction returned " + to_string(lastResult.value))
     if (!lastResult.value)
       return fail;
     if (!result.value) // this is true only when processing the first operand
       result = lastResult;
     else
     {
-      result.replacements = ReplacementsUtils::intersectionOfReplacements(result.replacements, lastResult.replacements);
+      result.replacements = ReplacementsUtils::intersectReplacements(result.replacements, lastResult.replacements);
       if (result.replacements.empty())
         return fail;
     }
@@ -88,7 +85,7 @@ LogicFormulaResult AndExpressionNode::compute() const
     LogicFormulaResult lastResult = atom->find(result.replacements);
     if (!lastResult.value)
       return fail;
-    result.replacements = ReplacementsUtils::intersectionOfReplacements(result.replacements, lastResult.replacements);
+    result.replacements = ReplacementsUtils::intersectReplacements(result.replacements, lastResult.replacements);
     if (result.replacements.empty())
       return fail;
   }
@@ -97,7 +94,7 @@ LogicFormulaResult AndExpressionNode::compute() const
     LogicFormulaResult lastResult = genAtom->generate(result.replacements);
     if (!lastResult.value)
       return fail;
-    result.replacements = ReplacementsUtils::intersectionOfReplacements(result.replacements, lastResult.replacements);
+    result.replacements = ReplacementsUtils::intersectReplacements(result.replacements, lastResult.replacements);
     if (result.replacements.empty())
       return fail;
   }
@@ -153,21 +150,18 @@ LogicFormulaResult OrExpressionNode::compute() const
     {
       if (!formulaClassifier.isFormulaWithConst(atom->getFormulaTemplate()))
       {
-        SC_LOG_DEBUG("Found formula without constants in disjunction")
         formulasWithoutConstants.push_back(atom);
         continue;
       }
       if (formulaClassifier.isFormulaToGenerate(atom->getFormulaTemplate()))
       {
-        SC_LOG_DEBUG("Found formula to generate in disjunction")
         formulasToGenerate.push_back(atom);
         continue;
       }
     }
     LogicFormulaResult lastResult = operand->compute();
-    SC_LOG_DEBUG("One of operands in disjunction returned " + to_string(lastResult.value))
     result.value |= lastResult.value;
-    result.replacements = ReplacementsUtils::unionOfReplacements(result.replacements, lastResult.replacements);
+    result.replacements = ReplacementsUtils::uniteReplacements(result.replacements, lastResult.replacements);
   }
   if (result.replacements.empty())
     return {false, {}};
@@ -175,13 +169,13 @@ LogicFormulaResult OrExpressionNode::compute() const
   {
     LogicFormulaResult lastResult = atom->find(result.replacements);
     result.value |= lastResult.value;
-    result.replacements = ReplacementsUtils::unionOfReplacements(result.replacements, lastResult.replacements);
+    result.replacements = ReplacementsUtils::uniteReplacements(result.replacements, lastResult.replacements);
   }
   for (auto const & genAtom : formulasToGenerate)
   {
     LogicFormulaResult lastResult = genAtom->generate(result.replacements);
     result.value |= lastResult.value;
-    result.replacements = ReplacementsUtils::unionOfReplacements(result.replacements, lastResult.replacements);
+    result.replacements = ReplacementsUtils::uniteReplacements(result.replacements, lastResult.replacements);
   }
   return result;
 }
@@ -219,7 +213,6 @@ LogicExpressionResult NotExpressionNode::check(ScTemplateParams params) const
 LogicFormulaResult NotExpressionNode::compute() const
 {
   const LogicFormulaResult & formulaResult = operands[0]->compute();
-  SC_LOG_DEBUG("Sub formula in negation returned " + to_string(formulaResult.value))
   return { !formulaResult.value, {} };
 }
 
@@ -262,31 +255,15 @@ LogicFormulaResult ImplicationExpressionNode::compute() const
 
   if (!isLeftGenerated)
   {
-    SC_LOG_DEBUG("*** Left part shouldn't be generated")
     leftResult = operands[0]->compute();
-    SC_LOG_DEBUG("--- value from left is " + to_string(leftResult.value))
-    SC_LOG_DEBUG("--- Replacements from left are " + to_string(ReplacementsUtils::getRowsAmount(leftResult.replacements)) + " x " + to_string(ReplacementsUtils::getColumnsAmount(leftResult.replacements)))
-
-    if (!isRightGenerated)
-      SC_LOG_DEBUG("*** Right part shouldn't be generated")
-    else
-      SC_LOG_DEBUG("*** Right part should be generated")
-
     rightResult = (isRightGenerated ? rightAtom->generate(leftResult.replacements) : operands[1]->compute());
-    SC_LOG_DEBUG("--- value from right is " + to_string(rightResult.value))
-    SC_LOG_DEBUG("--- Replacements from right are " + to_string(ReplacementsUtils::getRowsAmount(rightResult.replacements)) + " x " + to_string(ReplacementsUtils::getColumnsAmount(rightResult.replacements)))
   }
   else
   {
-    SC_LOG_DEBUG("*** Left part should be generated")
     if (isRightGenerated)
-    {
-      SC_LOG_DEBUG("*** Right part should be generated")
       return {true, {}};
-    }
     else
     {
-      SC_LOG_DEBUG("*** Right part shouldn't be generated")
       rightResult = operands[1]->compute();
       leftResult = leftAtom->generate(rightResult.replacements);
     }
@@ -294,7 +271,7 @@ LogicFormulaResult ImplicationExpressionNode::compute() const
 
   result.value = !leftResult.value || rightResult.value;
   if (rightResult.value)
-    result.replacements = ReplacementsUtils::unionOfReplacements(leftResult.replacements, rightResult.replacements);
+    result.replacements = ReplacementsUtils::uniteReplacements(leftResult.replacements, rightResult.replacements);
   return result;
 
 }
@@ -334,20 +311,17 @@ LogicFormulaResult EquivalenceExpressionNode::compute() const
     {
       if (!formulaClassifier.isFormulaWithConst(atom->getFormulaTemplate()))
       {
-        SC_LOG_DEBUG("Found formula without constants in equivalence")
         formulasWithoutConstants.push_back(atom);
         continue;
       }
       if (formulaClassifier.isFormulaToGenerate(atom->getFormulaTemplate()))
       {
-        SC_LOG_DEBUG("Found formula to generate in equivalence")
         formulasToGenerate.push_back(atom);
         continue;
       }
     }
     subFormulaResults.push_back(operand->compute());
   }
-  SC_LOG_DEBUG("Processed " + to_string(subFormulaResults.size()) + " formulas in equivalence")
   if (subFormulaResults.empty())
   {
     SC_LOG_ERROR("All sub formulas in equivalence are either don't have constants or supposed to be generated")
@@ -356,24 +330,20 @@ LogicFormulaResult EquivalenceExpressionNode::compute() const
 
   if (!formulasWithoutConstants.empty())
   {
-    SC_LOG_DEBUG("Processing formula without constants")
     auto formulaWithoutConstants = formulasWithoutConstants[0];
     subFormulaResults.push_back(formulaWithoutConstants->find(subFormulaResults[0].replacements));
   }
 
   if (!formulasToGenerate.empty())
   {
-    SC_LOG_DEBUG("Processing formula to generate")
     auto formulaToGenerate = formulasToGenerate[0];
     subFormulaResults.push_back(formulaToGenerate->generate(subFormulaResults[0].replacements));
   }
   result.value = subFormulaResults[0].value == subFormulaResults[1].value;
   if (result.value)
-    result.replacements = ReplacementsUtils::intersectionOfReplacements(subFormulaResults[0].replacements, subFormulaResults[1].replacements);
+    result.replacements = ReplacementsUtils::intersectReplacements(subFormulaResults[0].replacements,
+                                                                   subFormulaResults[1].replacements);
   return result;
-
-
-
 
   auto leftAtom = dynamic_cast<TemplateExpressionNode *>(operands[0].get());
   bool isLeftGenerated = (leftAtom) && formulaClassifier.isFormulaToGenerate(leftAtom->getFormulaTemplate());
@@ -384,37 +354,20 @@ LogicFormulaResult EquivalenceExpressionNode::compute() const
   bool leftHasConstants = (leftAtom) && formulaClassifier.isFormulaWithConst(leftAtom->getFormulaTemplate());
   bool rightHasConstants = (rightAtom) && formulaClassifier.isFormulaWithConst(rightAtom->getFormulaTemplate());
 
-  SC_LOG_DEBUG("Left has constants = " + to_string(leftHasConstants))
-  SC_LOG_DEBUG("Right has constants = " + to_string(rightHasConstants))
-
   LogicFormulaResult leftResult;
   LogicFormulaResult rightResult;
 
   if (!isLeftGenerated)
   {
-    SC_LOG_DEBUG("*** Left part of equivalence shouldn't be generated")
     leftResult = operands[0]->compute();
-    SC_LOG_DEBUG("--- value from left is " + to_string(leftResult.value))
-    SC_LOG_DEBUG("--- Replacements from left are " + to_string(ReplacementsUtils::getRowsAmount(leftResult.replacements)) + " x " + to_string(ReplacementsUtils::getColumnsAmount(leftResult.replacements)))
-    if (!isRightGenerated)
-      SC_LOG_DEBUG("*** Right part of equivalence shouldn't be generated")
-    else
-      SC_LOG_DEBUG("*** Right part of equivalence should be generated")
     rightResult = (isRightGenerated ? rightAtom->generate(leftResult.replacements) : operands[1]->compute());
-    SC_LOG_DEBUG("--- value from right is " + to_string(rightResult.value))
-    SC_LOG_DEBUG("--- Replacements from right are " + to_string(ReplacementsUtils::getRowsAmount(rightResult.replacements)) + " x " + to_string(ReplacementsUtils::getColumnsAmount(rightResult.replacements)))
   }
   else
   {
-    SC_LOG_DEBUG("*** Left part of equivalence should be generated")
     if (isRightGenerated)
-    {
-      SC_LOG_DEBUG("*** Right part of equivalence should be generated")
       return {true, {}};
-    }
     else
     {
-      SC_LOG_DEBUG("*** Right part of equivalence shouldn't be generated")
       rightResult = operands[1]->compute();
       leftResult = leftAtom->generate(rightResult.replacements);
     }
@@ -422,7 +375,7 @@ LogicFormulaResult EquivalenceExpressionNode::compute() const
 
   result.value = leftResult.value == rightResult.value;
   if (rightResult.value)
-    result.replacements = ReplacementsUtils::intersectionOfReplacements(leftResult.replacements, rightResult.replacements);
+    result.replacements = ReplacementsUtils::intersectReplacements(leftResult.replacements, rightResult.replacements);
   return result;
 
 }
@@ -485,7 +438,6 @@ LogicFormulaResult TemplateExpressionNode::compute() const
   auto const & idtf = context->HelperGetSystemIdtf(formulaTemplate);
   SC_LOG_DEBUG("Checking atom " + idtf)
 
-//  auto scTemplateParamsVector = templateManager->createTemplateParamsList(formulaTemplate, templateSearcher->getParams());
   result.replacements = templateSearcher->searchTemplate(formulaTemplate);
   result.value = !result.replacements.empty();
   std::string ending = (result.value ? " right" : " wrong");
@@ -497,7 +449,7 @@ LogicFormulaResult TemplateExpressionNode::compute() const
 LogicFormulaResult TemplateExpressionNode::find(map<string, vector<ScAddr>> & replacements) const
 {
   LogicFormulaResult result;
-  auto paramsVector = ReplacementsUtils::replacementsToScTemplateParams(replacements);
+  auto paramsVector = ReplacementsUtils::getReplacementsToScTemplateParams(replacements);
   result.replacements = templateSearcher->searchTemplate(formulaTemplate, paramsVector);
   result.value = !result.replacements.empty();
 
@@ -510,23 +462,17 @@ LogicFormulaResult TemplateExpressionNode::find(map<string, vector<ScAddr>> & re
 LogicFormulaResult TemplateExpressionNode::generate(map<string, vector<ScAddr>> & replacements) const
 {
   LogicFormulaResult result;
-  auto paramsVector = ReplacementsUtils::replacementsToScTemplateParams(replacements);
+  auto paramsVector = ReplacementsUtils::getReplacementsToScTemplateParams(replacements);
   for (auto const & scTemplateParams : paramsVector)
   {
     auto searchResult = templateSearcher->searchTemplate(formulaTemplate, scTemplateParams);
     if (searchResult.empty())
     {
-      SC_LOG_DEBUG("SearchResult is empty")
       ScTemplate generatedTemplate;
-      if (context->HelperBuildTemplate(generatedTemplate, formulaTemplate, scTemplateParams))
-        SC_LOG_DEBUG("Template was built")
-      else
-        SC_LOG_DEBUG("Template was not built")
+      context->HelperBuildTemplate(generatedTemplate, formulaTemplate, scTemplateParams);
 
       ScTemplateGenResult generationResult;
       const ScTemplate::Result & genTemplate = context->HelperGenTemplate(generatedTemplate, generationResult);
-      SC_LOG_DEBUG("context->HelperGenTemplate() = " + genTemplate.Msg())
-      SC_LOG_DEBUG("generationResult.Size() = " + to_string(generationResult.Size()))
 
       bool outputIsValid = outputStructure.IsValid();
       for (auto i = 0; i < generationResult.Size(); ++i)
@@ -535,7 +481,6 @@ LogicFormulaResult TemplateExpressionNode::generate(map<string, vector<ScAddr>> 
         if (outputIsValid)
           context->CreateEdge(ScType::EdgeAccessConstPosPerm, outputStructure, generationResult[i]);
       }
-
     }
   }
   return compute();
@@ -661,10 +606,7 @@ std::unique_ptr<LogicExpressionNode> LogicExpression::build(ScAddr const & node)
     if (!operands.empty())
       return std::make_unique<AndExpressionNode>(context, operands);
     else
-    {
-      SC_LOG_ERROR("Conjunction must have operands")
-      throw std::exception();
-    }
+      SC_THROW_EXCEPTION(utils::ScException, "Conjunction must have operands")
   }
 
   ScIterator3Ptr disjunctionIter3 = context->Iterator3(
@@ -680,11 +622,7 @@ std::unique_ptr<LogicExpressionNode> LogicExpression::build(ScAddr const & node)
     if (!operands.empty())
       return std::make_unique<OrExpressionNode>(context, operands);
     else
-    {
-      SC_LOG_ERROR("Disjunction must have operands")
-      throw std::exception();
-    }
-
+      SC_THROW_EXCEPTION(utils::ScException, "Disjunction must have operands")
   }
 
   ScIterator3Ptr negationIter3 = context->Iterator3(
@@ -700,11 +638,7 @@ std::unique_ptr<LogicExpressionNode> LogicExpression::build(ScAddr const & node)
     if (operands.size() == 1)
       return std::make_unique<NotExpressionNode>(context, std::move(operands[0]));
     else
-    {
-      SC_LOG_ERROR("There is " + to_string(operands.size()) + " operands in negation, but should be one")
-      throw std::exception();
-    }
-
+      SC_THROW_EXCEPTION(utils::ScException, "There is " + to_string(operands.size()) + " operands in negation, but should be one")
   }
 
   ScIterator3Ptr implicationIter3 = context->Iterator3(
@@ -715,36 +649,22 @@ std::unique_ptr<LogicExpressionNode> LogicExpression::build(ScAddr const & node)
 
   if (implicationIter3->Next())
   {
-    SC_LOG_DEBUG(context->HelperGetSystemIdtf(node) + " is an implication")
     if (utils::CommonUtils::checkType(context, node, ScType::EdgeDCommon)){
+      SC_LOG_DEBUG(context->HelperGetSystemIdtf(node) + " is an implication edge")
       auto operands = resolveOperandsForEdge(node);
-      SC_LOG_DEBUG("Found " + to_string(operands.size()) + " operands in implication edge")
       if (operands.size() == 2)
         return std::make_unique<ImplicationExpressionNode>(context, operands);
       else
-      {
-        SC_LOG_ERROR("There is " + to_string(operands.size()) + " operands in implication edge, but should be two")
-        for (auto const & operand : operands)
-        {
-          const ScAddr & addr = operand->getFormulaTemplate();
-          if (addr.IsValid())
-            SC_LOG_ERROR("-> " + context->HelperGetSystemIdtf(addr))
-          else
-            SC_LOG_ERROR("-> ?complex operand?")
-        }
-        throw std::exception();
-      }
+        SC_THROW_EXCEPTION(utils::ScException, "There is " + to_string(operands.size()) + " operands in implication edge, but should be two")
     }
     if (utils::CommonUtils::checkType(context, node, ScType::NodeTuple))
     {
+      SC_LOG_DEBUG(context->HelperGetSystemIdtf(node) + " is an implication tuple")
       auto operands = resolveOperandsForImplicationTuple(node);
       if (operands.size() == 2)
         return std::make_unique<ImplicationExpressionNode>(context, operands);
       else
-      {
-        SC_LOG_ERROR("There is " + to_string(operands.size()) + " operands in implication tuple, but should be two")
-        throw std::exception();
-      }
+        SC_THROW_EXCEPTION(utils::ScException, "There is " + to_string(operands.size()) + " operands in implication tuple, but should be two")
     }
   }
 
@@ -756,32 +676,23 @@ std::unique_ptr<LogicExpressionNode> LogicExpression::build(ScAddr const & node)
 
   if (equivalenceIter3->Next())
   {
-    SC_LOG_DEBUG(context->HelperGetSystemIdtf(node) + " is an equivalence")
     if (utils::CommonUtils::checkType(context, node, ScType::EdgeUCommon)){
+      SC_LOG_DEBUG(context->HelperGetSystemIdtf(node) + " is an equivalence edge")
       auto operands = resolveOperandsForEdge(node);
       if (operands.size() == 2)
         return std::make_unique<EquivalenceExpressionNode>(context, operands);
       else
-      {
-        SC_LOG_ERROR("There is " + to_string(operands.size()) + " operands in equivalence, but should be two")
-        throw std::exception();
-      }
+        SC_THROW_EXCEPTION(utils::ScException, "There is " + to_string(operands.size()) + " operands in equivalence edge, but should be two")
     }
     if (utils::CommonUtils::checkType(context, node, ScType::NodeTuple))
     {
+      SC_LOG_DEBUG(context->HelperGetSystemIdtf(node) + " is an equivalence tuple")
       auto operands = resolveOperandsForTuple(node);
       if (operands.size() == 2)
         return std::make_unique<EquivalenceExpressionNode>(context, operands);
       else
-      {
-        SC_LOG_ERROR("There is " + to_string(operands.size()) + " operands in equivalence, but should be two")
-        //SC_THROW_EXCEPTION(utils::ScException, )
-        throw std::exception();
-      }
+        SC_THROW_EXCEPTION(utils::ScException, "There is " + to_string(operands.size()) + " operands in equivalence tuple, but should be two")
     }
   }
-
-  SC_LOG_ERROR(context->HelperGetSystemIdtf(node) + " is not defined tuple")
-  throw std::exception();
+  SC_THROW_EXCEPTION(utils::ScException, context->HelperGetSystemIdtf(node) + " is not defined tuple")
 }
-

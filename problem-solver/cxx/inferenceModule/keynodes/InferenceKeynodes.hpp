@@ -21,6 +21,9 @@ class InferenceKeynodes : public ScObject
 
 public:
 
+  SC_PROPERTY(Keynode("knowledge_base_IMS"), ForceCreate)
+  static ScAddr knowledge_base_IMS;
+
   SC_PROPERTY(Keynode("action_use_logic_rule"), ForceCreate)
   static ScAddr action_use_logic_rule;
 
@@ -45,8 +48,8 @@ public:
   SC_PROPERTY(Keynode("concept_template_for_generation"), ForceCreate)
   static ScAddr concept_template_for_generation;
 
-  SC_PROPERTY(Keynode("concept_satisfiable_formula"), ForceCreate)
-  static ScAddr concept_satisfiable_formula;
+  SC_PROPERTY(Keynode("nrel_satisfiable_formula"), ForceCreate)
+  static ScAddr nrel_satisfiable_formula;
 
   SC_PROPERTY(Keynode("nrel_basic_sequence"), ForceCreate)
   static ScAddr nrel_basic_sequence;
