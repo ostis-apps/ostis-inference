@@ -49,13 +49,13 @@ ScAddr DirectInferenceManager::applyInference(
   }
   catch (std::runtime_error & ex)
   {
-    SC_LOG_ERROR(ex.what())
+    SC_LOG_ERROR(ex.what());
     return this->solutionTreeManager->createSolution(targetAchieved);
   }
 
   if (rulesQueuesByPriority.empty())
   {
-    SC_LOG_DEBUG("No rule sets found.")
+    SC_LOG_DEBUG("No rule sets found.");
     return this->solutionTreeManager->createSolution(targetAchieved);
   }
 
@@ -78,7 +78,7 @@ ScAddr DirectInferenceManager::applyInference(
           targetAchieved = isTargetAchieved(targetStatement, argumentList);
           if (targetAchieved)
           {
-            SC_LOG_DEBUG("Target achieved")
+            SC_LOG_DEBUG("Target achieved");
             break;
           }
           else
@@ -97,7 +97,7 @@ ScAddr DirectInferenceManager::applyInference(
     }
   }
   else
-  { SC_LOG_DEBUG("Target is already achieved") }
+  { SC_LOG_DEBUG("Target is already achieved"); }
 
   return this->solutionTreeManager->createSolution(targetAchieved);
 }
@@ -126,12 +126,10 @@ ScAddr DirectInferenceManager::applyInference(
 
   templateSearcher->setInputStructure(inputStructure);
 
-
-
   bool targetAchieved = isTargetAchieved(targetStatement, argumentList);
 
   if (targetAchieved)
-    SC_LOG_DEBUG("Target is already achieved")
+    SC_LOG_DEBUG("Target is already achieved");
   else
   {
     if(!ruleSet.IsValid())
@@ -144,13 +142,13 @@ ScAddr DirectInferenceManager::applyInference(
     }
     catch (std::runtime_error & ex)
     {
-      SC_LOG_ERROR(ex.what())
+      SC_LOG_ERROR(ex.what());
       return this->solutionTreeManager->createSolution(targetAchieved);
     }
 
     if (rulesQueuesByPriority.empty())
     {
-      SC_LOG_DEBUG("No rule sets found.")
+      SC_LOG_DEBUG("No rule sets found.");
       return this->solutionTreeManager->createSolution(targetAchieved);
     }
 
@@ -174,7 +172,7 @@ ScAddr DirectInferenceManager::applyInference(
           targetAchieved = isTargetAchieved(targetStatement, argumentList);
           if (targetAchieved)
           {
-            SC_LOG_DEBUG("Target achieved in applyInterference([4])")
+            SC_LOG_DEBUG("Target achieved in applyInterference([4])");
             break;
           }
           else
@@ -209,7 +207,7 @@ queue<ScAddr> DirectInferenceManager::createQueue(ScAddr const & set)
 
 bool DirectInferenceManager::useRule(ScAddr const & rule, vector<ScAddr> /*const*/ & argumentList)
 {
-  SC_LOG_DEBUG("Trying to use rule: " + ms_context->HelperGetSystemIdtf(rule))
+  SC_LOG_DEBUG("Trying to use rule: " + ms_context->HelperGetSystemIdtf(rule));
   ScAddr keyScElement = IteratorUtils::getAnyByOutRelation(ms_context, rule, InferenceKeynodes::rrel_main_key_sc_element);
   if (!keyScElement.IsValid())
     return false;
@@ -224,7 +222,7 @@ bool DirectInferenceManager::useRule(ScAddr const & rule, vector<ScAddr> /*const
 
   auto root = logicExpression.build(keyScElement);
   auto result = root->compute();
-  SC_LOG_DEBUG(std::string("Whole statement is ") + (result.value ? "right" : "wrong"))
+  SC_LOG_DEBUG(std::string("Whole statement is ") + (result.value ? "right" : "wrong"));
 
   return result.value;
 }

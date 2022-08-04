@@ -196,7 +196,7 @@ LogicExpressionResult NotExpressionNode::check(ScTemplateParams params) const
 {
   if (operands.size() != 1)
   {
-    SC_LOG_ERROR("Negation should have 1 operand but it has " + to_string(operands.size()))
+    SC_LOG_ERROR("Negation should have 1 operand but it has " + to_string(operands.size()));
     return {
           false,
           false,
@@ -226,7 +226,7 @@ LogicExpressionResult ImplicationExpressionNode::check(ScTemplateParams params) 
 {
   if (operands.size() != 2)
   {
-    SC_LOG_ERROR("Implication should have 2 operands but it has " + to_string(operands.size()))
+    SC_LOG_ERROR("Implication should have 2 operands but it has " + to_string(operands.size()));
     return {
           false,
           false,
@@ -324,7 +324,7 @@ LogicFormulaResult EquivalenceExpressionNode::compute() const
   }
   if (subFormulaResults.empty())
   {
-    SC_LOG_ERROR("All sub formulas in equivalence are either don't have constants or supposed to be generated")
+    SC_LOG_ERROR("All sub formulas in equivalence are either don't have constants or supposed to be generated");
     throw std::exception();
   }
 
@@ -411,7 +411,7 @@ LogicExpressionResult TemplateExpressionNode::check(ScTemplateParams params) con
 {
   auto searchResult = templateSearcher->searchTemplate(formulaTemplate, params);
   std::string result = (!searchResult.empty() ? "right" : "wrong");
-  SC_LOG_DEBUG("Statement " + context->HelperGetSystemIdtf(formulaTemplate) + " " + result)
+  SC_LOG_DEBUG("Statement " + context->HelperGetSystemIdtf(formulaTemplate) + " " + result);
 
   if (!searchResult.empty())
   {
@@ -436,12 +436,12 @@ LogicFormulaResult TemplateExpressionNode::compute() const
 {
   LogicFormulaResult result;
   auto const & idtf = context->HelperGetSystemIdtf(formulaTemplate);
-  SC_LOG_DEBUG("Checking atom " + idtf)
+  SC_LOG_DEBUG("Checking atom " + idtf);
 
   result.replacements = templateSearcher->searchTemplate(formulaTemplate);
   result.value = !result.replacements.empty();
   std::string ending = (result.value ? " right" : " wrong");
-  SC_LOG_DEBUG("Compute Statement " + idtf + ending)
+  SC_LOG_DEBUG("Compute Statement " + idtf + ending);
 
   return result;
 }
@@ -455,7 +455,7 @@ LogicFormulaResult TemplateExpressionNode::find(map<string, vector<ScAddr>> & re
 
   auto const & idtf = context->HelperGetSystemIdtf(formulaTemplate);
   std::string ending = (result.value ? " right" : " wrong");
-  SC_LOG_DEBUG("Find Statement " + idtf + ending)
+  SC_LOG_DEBUG("Find Statement " + idtf + ending);
   return result;
 }
 
@@ -530,7 +530,7 @@ std::unique_ptr<LogicExpressionNode> LogicExpression::build(ScAddr const & node)
         std::unique_ptr<LogicExpressionNode> op = build(operands->Get(2));
         operandsVector.emplace_back(std::move(op));
       }
-      SC_LOG_DEBUG("[Amount of operands in " + context->HelperGetSystemIdtf(node) + "]: " + to_string(operandsVector.size()))
+      SC_LOG_DEBUG("[Amount of operands in " + context->HelperGetSystemIdtf(node) + "]: " + to_string(operandsVector.size()));
 
       return operandsVector;
   };
@@ -582,7 +582,7 @@ std::unique_ptr<LogicExpressionNode> LogicExpression::build(ScAddr const & node)
 
   if (atomicFormulaIter3->Next())
   {
-    SC_LOG_DEBUG(context->HelperGetSystemIdtf(node) + " is a template")
+    SC_LOG_DEBUG(context->HelperGetSystemIdtf(node) + " is a template");
     std::vector<ScTemplateParams> params = templateManager->createTemplateParamsList(node, templateSearcher->getParams());
 
     if (!params.empty() && paramsSet.empty())
@@ -601,12 +601,12 @@ std::unique_ptr<LogicExpressionNode> LogicExpression::build(ScAddr const & node)
 
   if (conjunctionIter3->Next())
   {
-    SC_LOG_DEBUG(context->HelperGetSystemIdtf(node) + " is a conjunction tuple")
+    SC_LOG_DEBUG(context->HelperGetSystemIdtf(node) + " is a conjunction tuple");
     auto operands = resolveOperandsForTuple(node);
     if (!operands.empty())
       return std::make_unique<AndExpressionNode>(context, operands);
     else
-      SC_THROW_EXCEPTION(utils::ScException, "Conjunction must have operands")
+      SC_THROW_EXCEPTION(utils::ScException, "Conjunction must have operands");
   }
 
   ScIterator3Ptr disjunctionIter3 = context->Iterator3(
@@ -617,12 +617,12 @@ std::unique_ptr<LogicExpressionNode> LogicExpression::build(ScAddr const & node)
 
   if (disjunctionIter3->Next())
   {
-    SC_LOG_DEBUG(context->HelperGetSystemIdtf(node) + " is a disjunction tuple")
+    SC_LOG_DEBUG(context->HelperGetSystemIdtf(node) + " is a disjunction tuple");
     auto operands = resolveOperandsForTuple(node);
     if (!operands.empty())
       return std::make_unique<OrExpressionNode>(context, operands);
     else
-      SC_THROW_EXCEPTION(utils::ScException, "Disjunction must have operands")
+      SC_THROW_EXCEPTION(utils::ScException, "Disjunction must have operands");
   }
 
   ScIterator3Ptr negationIter3 = context->Iterator3(
@@ -633,12 +633,12 @@ std::unique_ptr<LogicExpressionNode> LogicExpression::build(ScAddr const & node)
 
   if (negationIter3->Next())
   {
-    SC_LOG_DEBUG(context->HelperGetSystemIdtf(node) + " is a negation tuple")
+    SC_LOG_DEBUG(context->HelperGetSystemIdtf(node) + " is a negation tuple");
     auto operands = resolveOperandsForTuple(node);
     if (operands.size() == 1)
       return std::make_unique<NotExpressionNode>(context, std::move(operands[0]));
     else
-      SC_THROW_EXCEPTION(utils::ScException, "There is " + to_string(operands.size()) + " operands in negation, but should be one")
+      SC_THROW_EXCEPTION(utils::ScException, "There is " + to_string(operands.size()) + " operands in negation, but should be one");
   }
 
   ScIterator3Ptr implicationIter3 = context->Iterator3(
@@ -650,21 +650,21 @@ std::unique_ptr<LogicExpressionNode> LogicExpression::build(ScAddr const & node)
   if (implicationIter3->Next())
   {
     if (utils::CommonUtils::checkType(context, node, ScType::EdgeDCommon)){
-      SC_LOG_DEBUG(context->HelperGetSystemIdtf(node) + " is an implication edge")
+      SC_LOG_DEBUG(context->HelperGetSystemIdtf(node) + " is an implication edge");
       auto operands = resolveOperandsForEdge(node);
       if (operands.size() == 2)
         return std::make_unique<ImplicationExpressionNode>(context, operands);
       else
-        SC_THROW_EXCEPTION(utils::ScException, "There is " + to_string(operands.size()) + " operands in implication edge, but should be two")
+        SC_THROW_EXCEPTION(utils::ScException, "There is " + to_string(operands.size()) + " operands in implication edge, but should be two");
     }
     if (utils::CommonUtils::checkType(context, node, ScType::NodeTuple))
     {
-      SC_LOG_DEBUG(context->HelperGetSystemIdtf(node) + " is an implication tuple")
+      SC_LOG_DEBUG(context->HelperGetSystemIdtf(node) + " is an implication tuple");
       auto operands = resolveOperandsForImplicationTuple(node);
       if (operands.size() == 2)
         return std::make_unique<ImplicationExpressionNode>(context, operands);
       else
-        SC_THROW_EXCEPTION(utils::ScException, "There is " + to_string(operands.size()) + " operands in implication tuple, but should be two")
+        SC_THROW_EXCEPTION(utils::ScException, "There is " + to_string(operands.size()) + " operands in implication tuple, but should be two");
     }
   }
 
@@ -677,22 +677,22 @@ std::unique_ptr<LogicExpressionNode> LogicExpression::build(ScAddr const & node)
   if (equivalenceIter3->Next())
   {
     if (utils::CommonUtils::checkType(context, node, ScType::EdgeUCommon)){
-      SC_LOG_DEBUG(context->HelperGetSystemIdtf(node) + " is an equivalence edge")
+      SC_LOG_DEBUG(context->HelperGetSystemIdtf(node) + " is an equivalence edge");
       auto operands = resolveOperandsForEdge(node);
       if (operands.size() == 2)
         return std::make_unique<EquivalenceExpressionNode>(context, operands);
       else
-        SC_THROW_EXCEPTION(utils::ScException, "There is " + to_string(operands.size()) + " operands in equivalence edge, but should be two")
+        SC_THROW_EXCEPTION(utils::ScException, "There is " + to_string(operands.size()) + " operands in equivalence edge, but should be two");
     }
     if (utils::CommonUtils::checkType(context, node, ScType::NodeTuple))
     {
-      SC_LOG_DEBUG(context->HelperGetSystemIdtf(node) + " is an equivalence tuple")
+      SC_LOG_DEBUG(context->HelperGetSystemIdtf(node) + " is an equivalence tuple");
       auto operands = resolveOperandsForTuple(node);
       if (operands.size() == 2)
         return std::make_unique<EquivalenceExpressionNode>(context, operands);
       else
-        SC_THROW_EXCEPTION(utils::ScException, "There is " + to_string(operands.size()) + " operands in equivalence tuple, but should be two")
+        SC_THROW_EXCEPTION(utils::ScException, "There is " + to_string(operands.size()) + " operands in equivalence tuple, but should be two");
     }
   }
-  SC_THROW_EXCEPTION(utils::ScException, context->HelperGetSystemIdtf(node) + " is not defined tuple")
+  SC_THROW_EXCEPTION(utils::ScException, context->HelperGetSystemIdtf(node) + " is not defined tuple");
 }

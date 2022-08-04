@@ -29,7 +29,7 @@ vector<ScTemplateParams> TemplateManager::createTemplateParams(
   map<string, set<ScAddr, AddrComparator>> replacementsMultimap;
   vector<ScTemplateParams> vectorOfTemplateParams;
 
-  SC_LOG_DEBUG("***\ncreating template params\ntemplate name: " + context->HelperGetSystemIdtf(scTemplate))
+  SC_LOG_DEBUG("***\ncreating template params\ntemplate name: " + context->HelperGetSystemIdtf(scTemplate));
 
   ScIterator3Ptr varIterator = context->Iterator3(
         scTemplate,
@@ -41,7 +41,7 @@ vector<ScTemplateParams> TemplateManager::createTemplateParams(
     string varName = context->HelperGetSystemIdtf(var);
     if (!replacementsMultimap[varName].empty())
     {
-      SC_LOG_DEBUG("var " + varName + " has been processed already")
+      SC_LOG_DEBUG("var " + varName + " has been processed already");
       continue;
     }
     ScAddr argumentOfVar;
@@ -99,6 +99,6 @@ vector<ScTemplateParams> TemplateManager::createTemplateParams(
       }
     }
   }
-  SC_LOG_DEBUG("***")
+  SC_LOG_DEBUG("***");
   return vectorOfTemplateParams;
 }
