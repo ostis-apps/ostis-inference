@@ -163,6 +163,7 @@ bool DirectInferenceManager::useRule(ScAddr const & rule, vector<ScAddr> const &
         this->solutionTreeManager->addNode(rule, ifStatementParams);
         isUsed = true;
         SC_LOG_DEBUG("Rule used")
+        break;
       }
     }
   }
@@ -186,17 +187,11 @@ vector<queue<ScAddr>> DirectInferenceManager::createRulesQueuesListByPriority(Sc
 
 bool DirectInferenceManager::generateStatement(ScAddr const & statement, ScTemplateParams const & templateParams)
 {
-  bool result = false;
-  ScTemplate searchTemplate;
-  ms_context->HelperBuildTemplate(searchTemplate, statement, templateParams);
-  ScTemplateSearchResult templateSearchResult;
-  if (!ms_context->HelperSearchTemplate(searchTemplate, templateSearchResult))
-  {
-    ScTemplate statementTemplate;
-    ms_context->HelperBuildTemplate(statementTemplate, statement);
-    ScTemplateGenResult templateGenResult;
-    result = ms_context->HelperGenTemplate(statementTemplate, templateGenResult, templateParams);
-  }
+  ScTemplate statementTemplate;
+  ms_context->HelperBuildTemplate(statementTemplate, statement);
+  ScTemplateGenResult templateGenResult;
+  bool result = ms_context->HelperGenTemplate(statementTemplate, templateGenResult, templateParams);
+
   return result;
 }
 
