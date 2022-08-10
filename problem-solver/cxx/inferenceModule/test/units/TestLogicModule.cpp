@@ -4,13 +4,14 @@
 * (See accompanying file COPYING.MIT or copy at http://opensource.org/licenses/MIT)
 */
 
-#include <sc_test.hpp>
-#include "builder/src/scs_loader.hpp"
 #include "sc-memory/kpm/sc_agent.hpp"
 #include "sc-agents-common/keynodes/coreKeynodes.hpp"
 #include "agent/DirectInferenceAgent.hpp"
 #include <sc-agents-common/utils/AgentUtils.hpp>
 #include "sc-agents-common/utils/IteratorUtils.hpp"
+
+#include "sc_test.hpp"
+#include "scs_loader.hpp"
 
 #include "manager/DirectInferenceManager.hpp"
 #include "keynodes/InferenceKeynodes.hpp"
@@ -95,7 +96,7 @@ TEST_F(InferenceLogicTest, EquivalencesNested)
 
   auto const & name = TEST_FILES_DIR_PATH + "inferenceTestEquivalences.scs";
   struct stat buffer;
-  SC_LOG_DEBUG("exists = " + to_string(stat (name.c_str(), &buffer) == 0))
+  SC_LOG_DEBUG("exists = " + to_string(stat (name.c_str(), &buffer) == 0));
 
   loader.loadScsFile(context, name);
   initialize();
