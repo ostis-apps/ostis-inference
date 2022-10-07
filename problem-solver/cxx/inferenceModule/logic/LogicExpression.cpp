@@ -1,8 +1,8 @@
 /*
-* This source file is part of an OSTIS project. For the latest info, see http://ostis.net
-* Distributed under the MIT License
-* (See accompanying file COPYING.MIT or copy at http://opensource.org/licenses/MIT)
-*/
+ * This source file is part of an OSTIS project. For the latest info, see http://ostis.net
+ * Distributed under the MIT License
+ * (See accompanying file COPYING.MIT or copy at http://opensource.org/licenses/MIT)
+ */
 
 #include "LogicExpression.hpp"
 #include "utils/ReplacementsUtils.hpp"
@@ -582,6 +582,7 @@ std::unique_ptr<LogicExpressionNode> LogicExpression::build(ScAddr const & node)
 
   if (atomicFormulaIter3->Next())
   {
+    SC_LOG_INFO("IN ATOMIC");
     SC_LOG_DEBUG(context->HelperGetSystemIdtf(node) + " is a template");
     std::vector<ScTemplateParams> params = templateManager->createTemplateParamsList(node, templateSearcher->getParams());
 
@@ -590,7 +591,7 @@ std::unique_ptr<LogicExpressionNode> LogicExpression::build(ScAddr const & node)
       paramsSet = std::move(params);
     }
 
-    return std::make_unique<TemplateExpressionNode>(context, node, templateSearcher, templateManager, outputStructure);
+    return std::make_unique<TemplateExpressionNode>(context, node, templateSearcher.get(), templateManager.get(), outputStructure);
   }
 
   ScIterator3Ptr conjunctionIter3 = context->Iterator3(
@@ -601,6 +602,7 @@ std::unique_ptr<LogicExpressionNode> LogicExpression::build(ScAddr const & node)
 
   if (conjunctionIter3->Next())
   {
+    SC_LOG_INFO("IN CONJ");
     SC_LOG_DEBUG(context->HelperGetSystemIdtf(node) + " is a conjunction tuple");
     auto operands = resolveOperandsForTuple(node);
     if (!operands.empty())
@@ -617,6 +619,7 @@ std::unique_ptr<LogicExpressionNode> LogicExpression::build(ScAddr const & node)
 
   if (disjunctionIter3->Next())
   {
+    SC_LOG_INFO("IN DISJ");
     SC_LOG_DEBUG(context->HelperGetSystemIdtf(node) + " is a disjunction tuple");
     auto operands = resolveOperandsForTuple(node);
     if (!operands.empty())
@@ -633,6 +636,7 @@ std::unique_ptr<LogicExpressionNode> LogicExpression::build(ScAddr const & node)
 
   if (negationIter3->Next())
   {
+    SC_LOG_INFO("IN NEG");
     SC_LOG_DEBUG(context->HelperGetSystemIdtf(node) + " is a negation tuple");
     auto operands = resolveOperandsForTuple(node);
     if (operands.size() == 1)
