@@ -31,7 +31,6 @@ ScAddr DirectInferenceManager::applyInference(
 {
   // returns all <ScType::Node>s from argumentSet
   vector<ScAddr> argumentList = utils::IteratorUtils::getAllWithType(ms_context, argumentSet, ScType::Node);
-
   //
   bool targetAchieved = isTargetAchieved(targetStatement, argumentList);
   vector<queue<ScAddr>> rulesQueuesByPriority;
@@ -195,9 +194,6 @@ queue<ScAddr> DirectInferenceManager::createQueue(ScAddr const & set)
   queue<ScAddr> queue;
   vector<ScAddr> elementList = utils::IteratorUtils::getAllWithType(ms_context, set, ScType::Node);
 
-  SC_LOG_INFO("Element list size");
-  SC_LOG_INFO(elementList.size());
-
   ContainersUtils::addToQueue(elementList, queue);
   return queue;
 }
@@ -205,16 +201,19 @@ queue<ScAddr> DirectInferenceManager::createQueue(ScAddr const & set)
 bool DirectInferenceManager::useRule(ScAddr const & rule, vector<ScAddr> /*const*/ & argumentList)
 {
   SC_LOG_DEBUG("Trying to use rule: " + ms_context->HelperGetSystemIdtf(rule));
+  SC_LOG_INFO("Trying to use rule: " + ms_context->HelperGetSystemIdtf(rule));
   ScAddr keyScElement =
       utils::IteratorUtils::getAnyByOutRelation(ms_context, rule, InferenceKeynodes::rrel_main_key_sc_element);
   if (!keyScElement.IsValid())
     return false;
 
-  LogicExpression logicExpression(ms_context, templateSearcher.get(), templateManager.get(), argumentList, outputStructure);
+  LogicExpression logicExpression(
+      ms_context, templateSearcher.get(), templateManager.get(), argumentList, outputStructure);
 
   auto root = logicExpression.build(keyScElement);
   auto result = root->compute();
   SC_LOG_DEBUG(std::string("Whole statement is ") + (result.value ? "right" : "wrong"));
+  SC_LOG_INFO(std::string("Whole statement is ") + (result.value ? "right" : "wrong"));
 
   return result.value;
 }

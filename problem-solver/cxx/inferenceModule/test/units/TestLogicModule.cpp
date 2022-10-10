@@ -57,7 +57,7 @@ TEST_F(InferenceLogicTest, TrueLogicRule)
         InferenceKeynodes::action_direct_inference,
         test);
 
-  EXPECT_TRUE(utils::AgentUtils::waitAgentResult(&context, test, WAIT_TIME));
+  EXPECT_TRUE(utils::AgentUtils::applyAction(&context, test, WAIT_TIME));
   EXPECT_TRUE(context.HelperCheckEdge(
         scAgentsCommon::CoreKeynodes::question_finished_successfully,
         test,
@@ -80,7 +80,7 @@ TEST_F(InferenceLogicTest, FalseLogicRule)
         ScType::EdgeAccessConstPosPerm,
         InferenceKeynodes::action_direct_inference,
         test);
-  EXPECT_TRUE(utils::AgentUtils::waitAgentResult(&context, test, WAIT_TIME));
+  EXPECT_TRUE(utils::AgentUtils::applyAction(&context, test, WAIT_TIME));
   EXPECT_TRUE(context.HelperCheckEdge(
         scAgentsCommon::CoreKeynodes::question_finished_unsuccessfully,
         test,
@@ -108,7 +108,7 @@ TEST_F(InferenceLogicTest, EquivalencesNested)
         ScType::EdgeAccessConstPosPerm,
         InferenceKeynodes::action_direct_inference,
         test);
-  EXPECT_TRUE(utils::AgentUtils::waitAgentResult(&context, test, WAIT_TIME));
+  EXPECT_TRUE(utils::AgentUtils::applyAction(&context, test, WAIT_TIME));
   EXPECT_TRUE(context.HelperCheckEdge(
         scAgentsCommon::CoreKeynodes::question_finished_unsuccessfully,
         test,
