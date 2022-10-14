@@ -1,5 +1,5 @@
 # ostis-inference
-Inference module for [OSTIS project](https://github.com/ostis-ai/ostis-web-platform)
+Inference module for [OSTIS project](https://github.com/ostis-ai/ostis-project)
 
 # Installation
 ```sh
