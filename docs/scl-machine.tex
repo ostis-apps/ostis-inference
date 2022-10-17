@@ -30,21 +30,23 @@
 
 \scnheader{Агент прямого логического вывода}
 \begin{scnindent}
-    \scnrelfrom{пример входной конструкции}{\scnfileimage{images/direct_inference_input.png}}
+    \scnrelfrom{пример входной конструкции}{\scnfileimage[40em]{images/direct_inference_input.png}}
     \begin{scnrelfromvector}{параметры агента}
         \scnitem{шаблон цели}
         \begin{scnindent}
             \scnidtf{target template}
             \scntext{пояснение}{Шаблон, успешный поиск которого показывает, что цель логического вывода достигнута и применение правил можно прекратить.}
-            \scnrelfrom{описание примера}{\scnfileimage{images/target_template.png}}
+            \scnrelfrom{описание примера}{\scnfileimage[28em]{images/target_template.png}}
         \end{scnindent}
         \scnitem{множество правил}
         \begin{scnindent}
             \scnidtf{rule set}
             \scntext{пояснение}{Ориентированное множество, первым элементом которого является множество правил, которые применяются в первую очередь,
                 а каждое следующее множество правил применяется после предыдущего. Таким образом указываются приоритеты множеств правил.}
-            \scnrelfrom{описание примера}{\scnfileimage{images/rules_set.png}}
-            \scnrelfrom{описание примера}{\scnfileimage{images/rule_example.png}}
+            \scnrelfrom{описание примера}{\scnfileimage[27em]{images/rules_set.png}}
+            \begin{scnindent}
+                \scnrelfrom{описание примера}{\scnfileimage[37em]{images/rule_example.png}}
+            \end{scnindent}
         \end{scnindent}
         \scnitem{множество аргументов}
         \begin{scnindent}
@@ -55,10 +57,10 @@
                 argument\_1, тогда значением \_y будет argument\_2. Также значением переменной \_x может быть
                 sc-узел argument\_2, а значением \_y -- argument\_1.}
             \end{scnindent}
-            \scnrelfrom{описание примера}{\scnfileimage{images/argument_set.png}}
+            \scnrelfrom{описание примера}{\scnfileimage[30em]{images/argument_set.png}}
         \end{scnindent}
     \end{scnrelfromvector}
-    \scnrelfrom{пример выходной конструкции}{\scnfileimage{images/direct_inference_output.png}}
+    \scnrelfrom{пример выходной конструкции}{\scnfileimage[30em]{images/direct_inference_output.png}}
     \begin{scnrelfromvector}{обобщённый алгоритм}
         \scnfileitem{Получение параметров агента, проверка их валидности. Вызов агента;}
         \scnfileitem{Проверка, достигнута ли уже цель в базе знаний;}
@@ -89,4 +91,5 @@
     \scnfileitem{Импликация в текущем состоянии интерпретируется не как логическая связка, а как отношение \scnkeyword{выводимости*},
     то есть импликация не возвращает логическую константу, а генерирует новые знания. Вместо этого должны использоваться правила вывода,
     например, Modes ponens и другие правила, в процессе логического вывода.}
+    \scnfileitem{В структуру ответа агента входит только узел solution, а не вся структура решения.}
 \end{scnrelfromset}
