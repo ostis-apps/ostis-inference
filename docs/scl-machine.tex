@@ -31,16 +31,17 @@
 \scnheader{Агент прямого логического вывода}
 \begin{scnindent}
     \scnrelfrom{пример входной конструкции}{\scnfileimage[40em]{images/direct_inference_input.png}}
-    \begin{scnrelfromvector}{параметры агента}
-        \scnitem{шаблон цели}
+    \begin{scnrelfromvector}{аргументы агента}
+        \scnitem{\_target\_template}
         \begin{scnindent}
-            \scnidtf{target template}
+            \scnidtf{targetTemplate}
+            \scnidtf{targetStatement}
             \scntext{пояснение}{Шаблон, успешный поиск которого показывает, что цель логического вывода достигнута и применение правил можно прекратить.}
             \scnrelfrom{описание примера}{\scnfileimage[28em]{images/target_template.png}}
         \end{scnindent}
-        \scnitem{множество правил}
+        \scnitem{\_rule\_set}
         \begin{scnindent}
-            \scnidtf{rule set}
+            \scnidtf{ruleSet}
             \scntext{пояснение}{Ориентированное множество, первым элементом которого является множество правил, которые применяются в первую очередь,
                 а каждое следующее множество правил применяется после предыдущего. Таким образом указываются приоритеты множеств правил.}
             \scnrelfrom{описание примера}{\scnfileimage[27em]{images/rules_set.png}}
@@ -48,9 +49,9 @@
                 \scnrelfrom{описание примера}{\scnfileimage[37em]{images/rule_example.png}}
             \end{scnindent}
         \end{scnindent}
-        \scnitem{множество аргументов}
+        \scnitem{\_argument\_set}
         \begin{scnindent}
-            \scnidtf{argument set}
+            \scnidtf{argumentSet}
             \scntext{пояснение}{Множество тех элементов, которые должны быть подставлены как значение переменных шаблона цели.}
             \begin{scnindent}
                 \scntext{пояснение}{В данном примере значением переменной \_x в шаблоне цели может быть sc-узел
