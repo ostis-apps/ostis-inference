@@ -10,6 +10,27 @@ Inference module for [OSTIS project](https://github.com/ostis-ai/ostis-project)
 - ./install_ostis.sh
 ```
 
+## Using as subsystem
+
+You can use this project as subsystem of any ostis-system using gitmodules like that
+```
+[submodule "subsystems/ostis-inference"]
+path = subsystems/ostis-inference
+url = https://github.com/ostis-apps/ostis-inference
+```
+
+Remember to add subdirectory in CMakeLists.txt of root project
+```cmake
+set(SUBSYSTEMS_PATH "${CMAKE_CURRENT_LIST_DIR}/subsystems")
+subdir_list(SUBDIRS ${SUBSYSTEMS_PATH})
+
+foreach(SUBDIR ${SUBDIRS})
+  add_subdirectory(${SUBSYSTEMS_PATH}/${SUBDIR}/problem-solver)
+endforeach()
+```
+
+To include ostis-inference knowledge base add `subsystems/ostis-inference/kb` to repo.path file.
+
 ## Documentation
 
 We document all information about the project development and its components' implementation in sources of its knowledge base
@@ -40,7 +61,8 @@ After the compilation, the `main.pdf` file should appear at `ostis-inference/doc
 
 ## Feedback
 
-Contributions, bug reports and feature requests are welcome! Feel free to check our [issues page](https://github.com/ostis-ai/ostis-inference/issues) and file a new issue (or comment in existing ones).
+Contributions, bug reports and feature requests are welcome! Feel free to check our 
+[issues page](https://github.com/ostis-apps/ostis-inference/issues) and file a new issue (or comment in existing ones).
 
 ## License
 
