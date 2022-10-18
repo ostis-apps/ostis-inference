@@ -1,6 +1,8 @@
 # ostis-inference
 Inference module for [OSTIS project](https://github.com/ostis-ai/ostis-project)
 
+# This repository is deprecated! Use https://github.com/ostis-ai/scl-machine
+
 # Installation
 ```sh
 - git clone https://github.com/ostis-apps/ostis-inference.git
